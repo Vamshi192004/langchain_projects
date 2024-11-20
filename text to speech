@@ -1,0 +1,77 @@
+import cohere
+import streamlit as st
+from gtts import gTTS
+import io
+
+# Initialize the Cohere API client
+API_KEY = "xaN91jocbOKWJ2OZwTsWNt8fxx1eRT8Ayrg1wH2f"  # Replace with your actual Cohere API key
+co = cohere.Client(API_KEY)
+
+# Available voice options with language codes
+voice_options = {
+    "English (US)": "en",
+    "English (UK)": "en-uk",
+    "English (Australia)": "en-au",
+    "English (India)": "en-in",
+    "French": "fr",
+    "German": "de",
+    "Spanish": "es",
+    "Italian": "it",
+    "Dutch": "nl",
+    "Portuguese": "pt",
+}
+
+# Function for text-to-speech synthesis
+def text_to_speech_with_cohere(text, lang_code):
+    try:
+        # Generate a speech-like response using Cohere
+        response = co.generate(
+            model="command-xlarge-nightly",
+            prompt=f"Convert the following text into natural speech: '{text}'",
+            max_tokens=50,
+            temperature=0.7
+        )
+        generated_text = response.generations[0].text.strip()
+
+        # Use gTTS for creating a speech audio file
+        tts = gTTS(text=generated_text, lang=lang_code)
+        audio = io.BytesIO()
+        tts.write_to_fp(audio)
+        audio.seek(0)
+        return audio
+    except Exception as e:
+        return f"Error: {e}"
+
+# Streamlit UI setup
+st.set_page_config(page_title="Text-to-Speech with Cohere", page_icon="🔊")
+
+# Application Title
+st.title("🗣️ Text-to-Speech with Cohere")
+st.write("Enter some text below and choose a voice to hear the natural speech generated for you!")
+
+# User input field for the text
+input_text = st.text_area("Enter Text", height=150)
+
+# Voice selection dropdown
+selected_voice = st.selectbox("Choose a voice/accent", list(voice_options.keys()))
+
+# Generate button
+if st.button("Generate Speech"):
+    if input_text.strip():
+        with st.spinner("Generating speech..."):
+            # Get the language code from the selected voice
+            lang_code = voice_options[selected_voice]
+            
+            # Generate the audio file
+            audio_file = text_to_speech_with_cohere(input_text, lang_code)
+            if isinstance(audio_file, io.BytesIO):
+                st.success("Speech generated successfully! 🎉")
+                st.audio(audio_file, format="audio/mp3", start_time=0)
+            else:
+                st.error(audio_file)
+    else:
+        st.error("Please enter some text.")
+
+# Footer
+st.markdown("---")
+st.markdown("**Developed with [Cohere API](https://cohere.com/) & [gTTS](https://pypi.org/project/gtts/)**")
