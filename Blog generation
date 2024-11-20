@@ -1,0 +1,33 @@
+import streamlit as st
+import cohere
+import os
+# Initialize Cohere client
+API_KEY = "RzWMNercdb7YX2sEYlJwetX5jHWINcBmX0PSN2Sm"  # Replace with your Cohere API key
+co = cohere.Client(API_KEY)
+
+## Function to get a response from Cohere's language model
+def get_cohere_response(question):
+    response = co.generate(
+        model="command-xlarge-nightly",  # You can adjust the model as needed
+        prompt=question,
+        max_tokens=100,  # Limit the number of tokens in the response
+        temperature=0.5  # Adjust the randomness of the response
+    )
+    return response.generations[0].text.strip()
+
+## Initialize our Streamlit app
+st.set_page_config(page_title="Q&A Demo")
+
+st.header("Langchain Application")
+
+input = st.text_input("Input: ", key="input")
+submit = st.button("Ask the question")
+
+## If ask button is clicked
+if submit:
+    if input.strip() == "":
+        st.warning("Please enter a question!")
+    else:
+        response = get_cohere_response(input)
+        st.subheader("The Response is")
+        st.write(response)
